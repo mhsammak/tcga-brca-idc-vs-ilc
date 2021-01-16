@@ -1,0 +1,239 @@
+---
+title: "DGE - All"
+author: "Musabbir Sammak"
+date: "12/25/2020"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Loads necessary libraries
+```{r, include=FALSE}
+library(edgeR)
+library(limma)
+library(EnsDb.Hsapiens.v86)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(gplots)
+library(ggpubr)
+library(RColorBrewer)
+library(EnhancedVolcano)
+```
+```{r}
+if (!dir.exists('./Figures')) { dir.create('Figures') }
+if (!dir.exists('./Results')) { dir.create('Results') }
+```
+# Loads & Preprocesses clinical data
+```{r}
+phenoNormalIlc <- read.csv("./Data/clinical-normal-lobular.csv")
+phenoTumorIlc <- read.csv("./Data/clinical-tumor-lobular.csv")
+phenoNormalIdc <- read.csv("./Data/clinical-normal-ductal.csv")
+phenoTumorIdc <- read.csv("./Data/clinical-tumor-ductal.csv")
+
+phenoNormalIdc$barcode <- str_replace_all(phenoNormalIdc$barcode, "-", ".")
+phenoTumorIdc$barcode <- str_replace_all(phenoTumorIdc$barcode, "-", ".")
+phenoNormalIlc$barcode <- str_replace_all(phenoNormalIlc$barcode, "-", ".")
+phenoTumorIlc$barcode <- str_replace_all(phenoTumorIlc$barcode, "-", ".")
+```
+```{r}
+dim(phenoNormalIlc)
+dim(phenoNormalIdc)
+dim(phenoTumorIlc)
+dim(phenoTumorIdc)
+```
+# Combines tumor and normal clinical data
+```{r}
+phenoIlc <- rbind(phenoNormalIlc, phenoTumorIlc)
+rownames(phenoIlc) <- phenoIlc$barcode
+phenoIlc <- phenoIlc[, c("patient", "shortLetterCode")]
+colnames(phenoIlc) <- c("Patient", "Group")
+phenoIlc$Patient <- factor(phenoIlc$Patient)
+phenoIlc$Group <- factor(phenoIlc$Group)
+```
+```{r}
+phenoIdc <- rbind(phenoNormalIdc, phenoTumorIdc)
+rownames(phenoIdc) <- phenoIdc$barcode
+phenoIdc <- phenoIdc[, c("patient", "shortLetterCode")]
+colnames(phenoIdc) <- c("Patient", "Group")
+phenoIdc$Patient <- factor(phenoIdc$Patient)
+phenoIdc$Group <- factor(phenoIdc$Group)
+```
+# Preprocess expression data
+```{r}
+expNormalIlc <- read.csv("./Data/expression-normal-lobular.csv")
+expTumorIlc <- read.csv("./Data/expression-tumor-lobular.csv")
+expTumorIlc <- expTumorIlc[, intersect(c("X", rownames(phenoIlc)), colnames(expTumorIlc))]
+
+expIlc <- merge(expNormalIlc, expTumorIlc, by = "X")
+rownames(expIlc) <- expIlc$X
+expIlc <- expIlc[, c(2:length(colnames(expIlc)))]
+```
+```{r}
+expNormalIdc <- read.csv("./Data/expression-normal-ductal.csv")
+expTumorIdc <- read.csv("./Data/expression-tumor-ductal.csv")
+expTumorIdc <- expTumorIdc[, intersect(c("X", rownames(phenoIdc)), colnames(expTumorIdc))]
+
+expIdc <- merge(expNormalIdc, expTumorIdc, by = "X")
+rownames(expIdc) <- expIdc$X
+expIdc <- expIdc[, c(2:length(colnames(expIdc)))]
+```
+# Creates DGEList
+```{r}
+dgeIlc <- DGEList(counts = as.matrix(expIlc), samples = phenoIlc, group = phenoIlc$Group)
+dgeIdc <- DGEList(counts = as.matrix(expIdc), samples = phenoIdc, group = phenoIdc$Group)
+```
+```{r}
+dim(dgeIlc)
+dim(dgeIdc)
+```
+# Prepares and assigns gene annotations to the DGEList
+```{r}
+geneid <- rownames(dgeIlc)
+genes <- ensembldb::select(EnsDb.Hsapiens.v86, 
+                           keys=geneid, 
+                           columns=c("ENTREZID", "SYMBOL", "GENEID",
+                                     "TXSEQSTART", "TXSEQEND", "SEQSTRAND"),
+                           keytype="GENEID")
+genes <- genes[!duplicated(genes$GENEID),]
+dgeIlc$genes <- genes
+dgeIdc$genes <- genes
+```
+```{r}
+head(genes)
+```
+# Filtering lowly expressed genes
+```{r}
+keepIlc <- filterByExpr(dgeIlc, group = dgeIlc$samples$Group)
+dgeIlc <- dgeIlc[keepIlc, , keep.lib.sizes = FALSE]
+
+keepIdc <- filterByExpr(dgeIdc, group = dgeIdc$samples$Group)
+dgeIdc <- dgeIdc[keepIdc, , keep.lib.sizes = FALSE]
+```
+```{r}
+dim(dgeIlc)
+dim(dgeIdc)
+```
+# Normalizing
+```{r}
+dgeIlc <- calcNormFactors(dgeIlc, method = "TMM")
+dgeIdc <- calcNormFactors(dgeIdc, method = "TMM")
+```
+# MDS plot of ILC
+```{r}
+lcpmIlc <- cpm(dgeIlc, log = TRUE)
+colGroup <- as.factor(dgeIlc$samples$Group)
+levels(colGroup) <-  brewer.pal(nlevels(colGroup), "Set1")
+colGroup <- as.character(colGroup)
+tiff("./Figures/mds-normal-ilc-all.tiff", height = 4, width = 4,
+     units = "in", res = 300)
+par(mar = c(5, 4, 2, 2) + 0.1)
+plotMDS(lcpmIlc, labels = dgeIlc$samples$Group, col = colGroup,
+        xlab = "logFC Dimension 1", ylab = "logFC Dimension 2")
+title(main = "MDS Plot of All Normal and ILC")
+dev.off()
+```
+# MDS plot of IDC
+```{r}
+lcpmIdc <- cpm(dgeIdc, log = TRUE)
+colGroup <- as.factor(dgeIdc$samples$Group)
+levels(colGroup) <-  brewer.pal(nlevels(colGroup), "Set1")
+colGroup <- as.character(colGroup)
+tiff("./Figures/mds-normal-idc-all.tiff", height = 4, width = 4,
+     units = "in", res = 300)
+par(mar = c(5, 4, 2, 2) + 0.1)
+plotMDS(lcpmIdc, labels = dgeIdc$samples$Group, col = colGroup,
+        xlab = "logFC Dimension 1", ylab = "logFC Dimension 2")
+title(main = "MDS Plot of All Normal and IDC")
+dev.off()
+```
+# Design matrix for normal vs. ILC
+```{r}
+designIlc <- model.matrix(~0 + Group, data = dgeIlc$samples)
+colnames(designIlc) <- str_remove_all(colnames(designIlc), "Group")
+contrIlc <- makeContrasts(TumorVsNormal = TP-NT, levels = designIlc)
+contrIlc
+```
+# Voom
+```{r}
+par(mfrow = c(1,1))
+v <- voom(dgeIlc, designIlc, plot=TRUE)
+```
+# DGE Analysis of normal vs. ILC
+```{r}
+vfit <- lmFit(v, designIlc)
+vfit <- contrasts.fit(vfit, contrasts = contrIlc)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+```
+# Filtering top DEGs in normal vs. ILC
+```{r}
+topIlc <- topTreat(efit, coef = 1, n = Inf)
+topSigIlc <- topIlc[topIlc$adj.P.Val < 0.05 & abs(topIlc$logFC) > 2, ]
+topSigIlc <- topSigIlc[order(topSigIlc$adj.P.Val), ]
+head(topSigIlc)
+```
+```{r}
+dim(topSigIlc)
+```
+# Volcano plot of DEGs in normal vs. ILC
+```{r}
+EnhancedVolcano(topIlc, x = "logFC", y = "adj.P.Val", lab = topIlc$SYMBOL,
+                FCcutoff = 2, pCutoff = 0.05, cutoffLineType = 'twodash',
+                cutoffLineWidth = 0.8, pointSize = 1.0, legendPosition = 'none',
+                title = "", subtitle = "", caption = "", labSize = 3, ylim = c(0, 20)) +
+  theme_pubr(legend = "none")
+ggsave("./Figures/volcano-normal-ilc-all.tiff", height = 6, width = 4, dpi = 300)
+```
+# Saving DEGs in normal vs. ILC
+```{r}
+write.csv(topIlc, "./Results/dge-normal-vs-ilc-all-all.csv", row.names = FALSE)
+write.csv(topSigIlc, "./Results/dge-normal-vs-ilc-all-sig.csv", row.names = FALSE)
+```
+# Design matrix of normal vs. IDC
+```{r}
+designIdc <- model.matrix(~0 + Group, data = dgeIdc$samples)
+colnames(designIdc) <- str_remove_all(colnames(designIdc), "Group")
+contrIdc <- makeContrasts(TumorVsNormal = TP-NT, levels = designIdc)
+contrIdc
+```
+# Voom
+```{r}
+par(mfrow = c(1, 1))
+v <- voom(dgeIdc, designIdc, plot=TRUE)
+```
+# DGE analysis in normal vs. IDC
+```{r}
+vfit <- lmFit(v, designIdc)
+vfit <- contrasts.fit(vfit, contrasts = contrIdc)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+```
+# Filtering top DEGs in normal vs. IDC
+```{r}
+topIdc <- topTreat(efit, coef = 1, n = Inf)
+topSigIdc <- topIdc[topIdc$adj.P.Val < 0.05 & abs(topIdc$logFC) > 2, ]
+topSigIdc <- topSigIdc[order(topSigIdc$adj.P.Val), ]
+head(topSigIdc)
+```
+```{r}
+dim(topSigIdc)
+```
+# Volcano plot of DEGs in normal vs. IDC
+```{r}
+EnhancedVolcano(topIdc, x = "logFC", y = "adj.P.Val", lab = topIdc$SYMBOL,
+                FCcutoff = 2, pCutoff = 0.05, cutoffLineType = 'twodash',
+                cutoffLineWidth = 0.8, pointSize = 1.0, legendPosition = 'none',
+                title = "", subtitle = "", caption = "", labSize = 3, ylim = c(0, 250)) +
+  theme_pubr(legend = "none")
+ggsave("./Figures/volcano-normal-idc-all.tiff", height = 6, width = 4, dpi = 300)
+```
+# Saving DEGs in normal vs. IDC
+```{r}
+write.csv(topIdc, "./Results/dge-normal-vs-idc-all-all.csv", row.names = FALSE)
+write.csv(topSigIdc, "./Results/dge-normal-vs-idc-all-sig.csv", row.names = FALSE)
+```
+# Clears workspace
+```{r}
+rm(list = ls())
+```
