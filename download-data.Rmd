@@ -1,0 +1,98 @@
+---
+title: "Download TCGA Data"
+author: "Musabbir Sammak"
+date: "11/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Loads libraries
+```{r, include=FALSE}
+library(dplyr)
+library(TCGAbiolinks)
+library(SummarizedExperiment)
+```
+```{r}
+if (!dir.exists('./Data')) {
+    dir.create('Data')
+}
+```
+# Query and download expression data
+```{r, include=FALSE}
+query.exp <- GDCquery(project = "TCGA-BRCA",
+                      data.category = "Transcriptome Profiling",
+                      data.type = "Gene Expression Quantification", 
+                      workflow.type = "HTSeq - Counts")
+GDCdownload(query.exp)
+dataExpression <- GDCprepare(query.exp)
+```
+# Extracts expression and clinical data
+```{r}
+clinicalData <- as.data.frame(colData(dataExpression))
+expData <- as.data.frame(assay(dataExpression))
+```
+# Separates clinical data into normal, tumor, normal ILC, normal IDC, tumor ILC, 
+and tumor IDC.
+```{r}
+head(clinicalData)
+```
+```{r}
+normalClinicalData <- filter(clinicalData, shortLetterCode == "NT")
+normalClinicalData <- filter(normalClinicalData,
+                             primary_diagnosis == "Infiltrating duct carcinoma, NOS" |
+                             primary_diagnosis == "Lobular carcinoma, NOS")
+normalClinicalData <- select(normalClinicalData, -c(treatments, disease_type, primary_site))
+normalClinicalData$primary_diagnosis <- as.factor(normalClinicalData$primary_diagnosis)
+levels(normalClinicalData$primary_diagnosis) <- c("IDC", "ILC")
+write.csv(normalClinicalData, "./Data/clinical-normal-all.csv", row.names = FALSE)
+```
+```{r}
+normalclinicalDuctal <- filter(normalClinicalData, primary_diagnosis == "IDC")
+write.csv(normalclinicalDuctal, "./Data/clinical-normal-ductal.csv", row.names = FALSE)
+normalclinicalLobular <- filter(normalClinicalData, primary_diagnosis == "ILC")
+write.csv(normalclinicalLobular, "./Data/clinical-normal-lobular.csv", row.names = FALSE)
+```
+```{r}
+tumorClinicalData <- filter(clinicalData, shortLetterCode == "TP")
+tumorClinicalData <- filter(tumorClinicalData,
+                            primary_diagnosis == "Infiltrating duct carcinoma, NOS" | 
+                            primary_diagnosis == "Lobular carcinoma, NOS")
+tumorClinicalData <- select(tumorClinicalData, -c(treatments, disease_type, primary_site))
+tumorClinicalData$primary_diagnosis <- as.factor(tumorClinicalData$primary_diagnosis)
+levels(tumorClinicalData$primary_diagnosis) <- c("IDC", "ILC")
+write.csv(tumorClinicalData, "./Data/clinical-tumor-all.csv", row.names = FALSE)
+```
+```{r}
+tumorClinicalDuctal <- filter(tumorClinicalData, primary_diagnosis == "IDC")
+write.csv(tumorClinicalDuctal, "./Data/clinical-tumor-ductal.csv", row.names = FALSE)
+tumorClinicalLobular <- filter(tumorClinicalData, primary_diagnosis == "ILC")
+write.csv(tumorClinicalLobular, "./Data/clinical-tumor-lobular.csv", row.names = FALSE)
+```
+# Separates expression data into normal, tumor, normal ILC, normal IDC, tumor ILC, 
+and tumor IDC.
+```{r}
+normalExp <- select(expData, normalClinicalData$barcode)
+normalDuctalExp <- select(expData, normalclinicalDuctal$barcode)
+normalLobularExp <- select(expData, normalclinicalLobular$barcode)
+
+write.csv(normalExp, "./Data/expression-normal-all.csv")
+write.csv(normalDuctalExp, "./Data/expression-normal-ductal.csv")
+write.csv(normalLobularExp, "./Data/expression-normal-lobular.csv")
+```
+```{r}
+tumorExp <- select(expData, intersect(tumorClinicalData$barcode, colnames(expData)))
+tumorDuctalExp <- select(expData, 
+                         intersect(tumorClinicalDuctal$barcode, colnames(expData)))
+tumorLobularExp <- select(expData,
+                          intersect(tumorClinicalLobular$barcode, colnames(expData)))
+
+write.csv(tumorExp, "./Data/expression-tumor-all.csv")
+write.csv(tumorDuctalExp, "./Data/expression-tumor-ductal.csv")
+write.csv(tumorLobularExp, "./Data/expression-tumor-lobular.csv")
+```
+# Clears workspace
+```{r}
+rm(list = ls())
+```
