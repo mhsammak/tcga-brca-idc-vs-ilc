@@ -86,42 +86,42 @@ keggComUp <- enrichKEGG(gene = comUp$ENTREZID,
                         organism     = 'hsa',
                         pvalueCutoff = 0.05)
 keggComUp <- setReadable(keggComUp, org.Hs.eg.db, "ENTREZID")
-write.csv(keggComUp, "./Results/ora-common-up-paired.csv")
+write.csv(keggComUp, "./Results/ora-kegg-common-up-paired.csv")
 ```
 ```{r}
 keggComDown <- enrichKEGG(gene = comDown$ENTREZID,
                           organism     = 'hsa',
                           pvalueCutoff = 0.05)
 keggComDown <- setReadable(keggComDown, org.Hs.eg.db, "ENTREZID")
-write.csv(keggComDown, "./Results/ora-common-down-paired.csv")
+write.csv(keggComDown, "./Results/ora-kegg-common-down-paired.csv")
 ```
 ```{r}
 keggIlcExcUp <- enrichKEGG(gene = ilcExcUp$ENTREZID,
                            organism     = 'hsa',
                            pvalueCutoff = 0.05)
 keggIlcExcUp <- setReadable(keggIlcExcUp, org.Hs.eg.db, "ENTREZID")
-write.csv(keggIlcExcUp, "./Results/ora-ilc-exclusive-up-paired.csv")
+write.csv(keggIlcExcUp, "./Results/ora-kegg-ilc-exclusive-up-paired.csv")
 ```
 ```{r}
 keggIlcExcDown <- enrichKEGG(gene = ilcExcDown$ENTREZID,
                              organism     = 'hsa',
                              pvalueCutoff = 0.05)
 keggIlcExcDown <- setReadable(keggIlcExcDown, org.Hs.eg.db, "ENTREZID")
-write.csv(keggIlcExcDown, "./Results/ora-ilc-exclusive-down-paired.csv")
+write.csv(keggIlcExcDown, "./Results/ora-kegg-ilc-exclusive-down-paired.csv")
 ```
 ```{r}
 keggIdcExcUp <- enrichKEGG(gene = idcExcUp$ENTREZID,
                            organism     = 'hsa',
                            pvalueCutoff = 0.05)
 keggIdcExcUp <- setReadable(keggIdcExcUp, org.Hs.eg.db, "ENTREZID")
-write.csv(keggIdcExcUp, "./Results/ora-idc-exclusive-up-paired.csv")
+write.csv(keggIdcExcUp, "./Results/ora-kegg-idc-exclusive-up-paired.csv")
 ```
 ```{r}
 keggIdcExcDown <- enrichKEGG(gene = idcExcDown$ENTREZID,
                              organism     = 'hsa',
                              pvalueCutoff = 0.05)
 keggIdcExcDown <- setReadable(keggIdcExcDown, org.Hs.eg.db, "ENTREZID")
-write.csv(keggIdcExcDown, "./Results/ora-idc-exclusive-down-paired.csv")
+write.csv(keggIdcExcDown, "./Results/ora-kegg-idc-exclusive-down-paired.csv")
 ```
 
 ################################################################################
@@ -174,7 +174,7 @@ goComUp <- enrichGO(gene = comUp$ENTREZID,
                     pvalueCutoff = 0.01,
                     qvalueCutoff = 0.05,
                     readable = TRUE)
-write.csv(goComUp, "./Results/go-common-up-bp.csv")
+write.csv(goComUp, "./Results/ora-go-common-up-bp-paired.csv")
 
 goComDown <- enrichGO(gene = comDown$ENTREZID,
                       universe = as.character(union(ilcAll$ENTREZID, idcAll$ENTREZID)),
@@ -184,7 +184,7 @@ goComDown <- enrichGO(gene = comDown$ENTREZID,
                       pvalueCutoff = 0.01,
                       qvalueCutoff = 0.05,
                       readable = TRUE)
-write.csv(goComDown, "./Results/go-common-down-bp.csv")
+write.csv(goComDown, "./Results/ora-go-common-down-bp-paired.csv")
 
 goIlcUp <- enrichGO(gene = ilcExcUp$ENTREZID,
                     universe = as.character(ilcAll$ENTREZID),
@@ -194,7 +194,7 @@ goIlcUp <- enrichGO(gene = ilcExcUp$ENTREZID,
                     pvalueCutoff = 0.01,
                     qvalueCutoff = 0.05,
                     readable = TRUE)
-write.csv(goIlcUp, "./Results/go-ilc-exclusive-up-bp.csv")
+write.csv(goIlcUp, "./Results/ora-go-ilc-exclusive-up-bp-paired.csv")
 
 goIlcDown <- enrichGO(gene = ilcExcDown$ENTREZID,
                       universe = as.character(ilcAll$ENTREZID),
@@ -204,7 +204,7 @@ goIlcDown <- enrichGO(gene = ilcExcDown$ENTREZID,
                       pvalueCutoff = 0.01,
                       qvalueCutoff = 0.05,
                       readable = TRUE)
-write.csv(goIlcDown, "./Results/go-ilc-exclusive-down-bp.csv")
+write.csv(goIlcDown, "./Results/ora-go-ilc-exclusive-down-bp-paired.csv")
 
 goIdcUp <- enrichGO(gene = idcExcUp$ENTREZID,
                     universe = as.character(idcAll$ENTREZID),
@@ -214,7 +214,7 @@ goIdcUp <- enrichGO(gene = idcExcUp$ENTREZID,
                     pvalueCutoff = 0.01,
                     qvalueCutoff = 0.05,
                     readable = TRUE)
-write.csv(goIdcUp, "./Results/go-idc-exclusive-up-bp.csv")
+write.csv(goIdcUp, "./Results/ora-go-idc-exclusive-up-bp-paired.csv")
 
 goIdcDown <- enrichGO(gene = idcExcDown$ENTREZID,
                       universe = as.character(idcAll$ENTREZID),
@@ -224,8 +224,44 @@ goIdcDown <- enrichGO(gene = idcExcDown$ENTREZID,
                       pvalueCutoff = 0.01,
                       qvalueCutoff = 0.05,
                       readable = TRUE)
-write.csv(goIdcDown, "./Results/go-idc-exclusive-down-bp.csv")
+write.csv(goIdcDown, "./Results/ora-go-idc-exclusive-down-bp-paired.csv")
 ```
+```{r}
+goComUp@result$Description <- str_to_sentence(str_wrap(goComUp@result$Description, 25))
+goComDown@result$Description <- str_to_sentence(str_wrap(goComDown@result$Description, 25))
+goIlcUp@result$Description <- str_to_sentence(str_wrap(goIlcUp@result$Description, 25))
+goIlcDown@result$Description <- str_to_sentence(str_wrap(goIlcDown@result$Description, 25))
+goIdcUp@result$Description <- str_to_sentence(str_wrap(goIdcUp@result$Description, 25))
+goIdcDown@result$Description <- str_to_sentence(str_wrap(goIdcDown@result$Description, 25))
+
+dotplot(goComUp, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Biological Processes of Common Up-regulated Genes") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-common-up-bp-paired.tiff", dpi = 300)
+
+dotplot(goComDown, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Biological Processes of Common Down-regulated Genes") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-common-down-bp-paired.tiff", dpi = 300)
+
+dotplot(goIdcUp, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Biological Processes of Exclusive Up-regulated Genes in IDC") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-idc-exclusive-up-bp-paired.tiff", dpi = 300)
+
+dotplot(goIdcDown, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Biological Processes of Exclusive Down-regulated Genes in IDC") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-idc-exclusive-down-paired.tiff", dpi = 300)
+```
+
+################################################################################
+############## GO MF Analysis of Common & Exclusive DEGs #######################
+################################################################################
 
 ```{r}
 goComUp <- enrichGO(gene = comUp$ENTREZID,
@@ -236,7 +272,7 @@ goComUp <- enrichGO(gene = comUp$ENTREZID,
                     pvalueCutoff = 0.01,
                     qvalueCutoff = 0.05,
                     readable = TRUE)
-write.csv(goComUp, "./Results/go-common-up-mf.csv")
+write.csv(goComUp, "./Results/ora-go-common-up-mf.csv")
 
 goComDown <- enrichGO(gene = comDown$ENTREZID,
                       universe = as.character(union(ilcAll$ENTREZID, idcAll$ENTREZID)),
@@ -246,7 +282,7 @@ goComDown <- enrichGO(gene = comDown$ENTREZID,
                       pvalueCutoff = 0.01,
                       qvalueCutoff = 0.05,
                       readable = TRUE)
-write.csv(goComDown, "./Results/go-common-down-mf.csv")
+write.csv(goComDown, "./Results/ora-go-common-down-mf.csv")
 
 goIlcUp <- enrichGO(gene = ilcExcUp$ENTREZID,
                     universe = as.character(ilcAll$ENTREZID),
@@ -256,7 +292,7 @@ goIlcUp <- enrichGO(gene = ilcExcUp$ENTREZID,
                     pvalueCutoff = 0.01,
                     qvalueCutoff = 0.05,
                     readable = TRUE)
-write.csv(goIlcUp, "./Results/go-ilc-exclusive-up-mf.csv")
+write.csv(goIlcUp, "./Results/ora-go-ilc-exclusive-up-mf.csv")
 
 goIlcDown <- enrichGO(gene = ilcExcDown$ENTREZID,
                       universe = as.character(ilcAll$ENTREZID),
@@ -266,7 +302,7 @@ goIlcDown <- enrichGO(gene = ilcExcDown$ENTREZID,
                       pvalueCutoff = 0.01,
                       qvalueCutoff = 0.05,
                       readable = TRUE)
-write.csv(goIlcDown, "./Results/go-ilc-exclusive-down-mf.csv")
+write.csv(goIlcDown, "./Results/ora-go-ilc-exclusive-down-mf.csv")
 
 goIdcUp <- enrichGO(gene = idcExcUp$ENTREZID,
                     universe = as.character(idcAll$ENTREZID),
@@ -276,7 +312,7 @@ goIdcUp <- enrichGO(gene = idcExcUp$ENTREZID,
                     pvalueCutoff = 0.01,
                     qvalueCutoff = 0.05,
                     readable = TRUE)
-write.csv(goIdcUp, "./Results/go-idc-exclusive-up-mf.csv")
+write.csv(goIdcUp, "./Results/ora-go-idc-exclusive-up-mf.csv")
 
 goIdcDown <- enrichGO(gene = idcExcDown$ENTREZID,
                       universe = as.character(idcAll$ENTREZID),
@@ -286,5 +322,43 @@ goIdcDown <- enrichGO(gene = idcExcDown$ENTREZID,
                       pvalueCutoff = 0.01,
                       qvalueCutoff = 0.05,
                       readable = TRUE)
-write.csv(goIdcDown, "./Results/go-idc-exclusive-down-mf.csv")
+write.csv(goIdcDown, "./Results/ora-go-idc-exclusive-down-mf-paired.csv")
+```
+```{r}
+goComUp@result$Description <- str_to_sentence(str_wrap(goComUp@result$Description, 25))
+goComDown@result$Description <- str_to_sentence(str_wrap(goComDown@result$Description, 25))
+goIlcUp@result$Description <- str_to_sentence(str_wrap(goIlcUp@result$Description, 25))
+goIlcDown@result$Description <- str_to_sentence(str_wrap(goIlcDown@result$Description, 25))
+goIdcUp@result$Description <- str_to_sentence(str_wrap(goIdcUp@result$Description, 25))
+goIdcDown@result$Description <- str_to_sentence(str_wrap(goIdcDown@result$Description, 25))
+
+dotplot(goComUp, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Molecular Functions of Common Up-regulated Genes") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-common-up-mf-paired.tiff", dpi = 300)
+
+dotplot(goComDown, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Molecular Functions of Common Down-regulated Genes") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-common-down-mf-paired.tiff", dpi = 300)
+
+dotplot(goIdcUp, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Molecular Functions of Exclusive Up-regulated Genes in IDC") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-idc-exclusive-up-mf-paired.tiff", dpi = 300)
+
+dotplot(goIdcDown, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Molecular Functions of Exclusive Down-regulated Genes in IDC") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-idc-exclusive-down-mf-paired.tiff", dpi = 300)
+
+dotplot(goIlcUp, showCategory = 10) + xlab("Gene Ratio") + ylab("Description") +
+  ggtitle("Molecular Functions of Exclusive Up-regulated Genes in ILC") +
+  theme_cleveland() + guides(colour = guide_legend(title = "Adj p-value"),
+                             size = guide_legend(title = "Gene Count"))
+ggsave("./Figures/ora-go-ilc-exclusive-up-mf-paired.tiff", dpi = 300)
 ```
